@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FloodSense AI - Karnataka</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#eef3f5;--ink:#10252f;--mut:#5d717b;--card:#fff;--line:#d5dfe4;--sea:#0e5a73;
+--ok:#2f8f6b;--watch:#c9a227;--high:#e0732b;--crit:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#0b181f;--ink:#e6eff2;--mut:#8fa5af;--card:#12252e;--line:#233a45;--sea:#4fb3d1}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:16px 24px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:22px;color:var(--sea)}
+.sub{color:var(--mut);font-size:13px;margin:0}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+select,button,input{font:inherit;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button{cursor:pointer;background:var(--sea);color:#fff;border:0;font-weight:600}
+button.alt{background:var(--card);color:var(--sea);border:1px solid var(--sea)}
+button.red{background:var(--crit)}
+:focus-visible{outline:3px solid var(--watch);outline-offset:2px}
+#banner{margin:16px 24px 0;padding:14px 16px;border-radius:10px;color:#fff;font-weight:600;background:var(--ok)}
+#status{margin:8px 24px 0;color:var(--mut);font-size:13px}
+main{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;padding:16px 24px;max-width:1400px;margin:auto}
+@media(max-width:950px){main{grid-template-columns:1fr}}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px}
+#map{height:520px;border-radius:8px;background:var(--bg)}
+.sw{position:relative;display:flex;gap:8px;margin-bottom:10px}
+#pq{flex:1;min-width:0}
+#sug{position:absolute;top:100%;left:0;right:0;z-index:2000;background:var(--card);border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:320px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#sug button{display:block;width:100%;text-align:left;background:none;color:var(--ink);border:0;border-bottom:1px solid var(--line);border-radius:0;font-weight:400;padding:9px 12px}
+#sug button:hover,#sug button:focus{background:var(--bg)}
+#sug b{display:block}#sug small{color:var(--mut)}
+#sug p{margin:0;padding:10px 12px;color:var(--mut);font-size:13px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--mut)}
+.stats b{display:block;font-size:20px;color:var(--sea)}
+#q{width:100%;margin-bottom:8px}
+#zones{max-height:420px;overflow-y:auto;padding-right:4px}
+.z{display:block;width:100%;text-align:left;border:0;border-left:6px solid var(--c);padding:8px 12px;margin-bottom:8px;background:var(--bg);color:var(--ink);border-radius:8px;font-weight:400}
+.z h3{margin:0;font-size:15px;display:flex;justify-content:space-between;gap:8px}
+.z h3 em{font-style:normal;color:var(--mut);font-weight:400;font-size:12px}
+.tag{font-size:11px;font-weight:700;color:#fff;background:var(--c);padding:1px 8px;border-radius:99px;height:max-content;white-space:nowrap}
+.bar{height:6px;background:var(--line);border-radius:9px;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--c);border-radius:9px}
+.z small{display:block;color:var(--mut)}
+.wide{grid-column:1/-1}
+svg text{fill:var(--mut);font-size:11px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:5px}
+#cl{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:4px}
+.pop b{font-size:14px}.pop div{margin-top:3px}
+#pr{display:none;margin-top:12px;border-left:6px solid var(--c,var(--ok));background:var(--bg);border-radius:8px;padding:12px 14px}
+#pr h3{margin:0;display:flex;justify-content:space-between;gap:8px;font-size:16px}
+#pr small{display:block;color:var(--mut)}
+#pr .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:2px 14px;margin:8px 0;font-size:13px}
+.pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+#sur{display:none;margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+#sur h4{margin:0 0 6px;font-size:15px;color:var(--sea)}
+#sur .row{display:flex;gap:10px;align-items:flex-start;padding:5px 0;border-top:1px solid var(--line);font-size:13px}
+#sur .row:first-of-type{border-top:0}
+#sur .dot{flex:none;width:12px;height:12px;border-radius:50%;margin-top:5px;background:var(--c)}
+#sur .row div{flex:1}
+#sur small{display:block;color:var(--mut)}
+#sur .note{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--card);border:1px solid var(--line);font-size:13px}
+.wh{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline}
+.wh h2{margin:0;font-size:17px;color:var(--sea)}
+.wcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;margin-top:10px}
+.wc{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:12px;color:var(--mut)}
+.wc b{display:block;font-size:19px;color:var(--ink)}
+.wc.big b{font-size:24px}
+.days{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:10px}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;margin-top:4px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>FloodSense AI - Karnataka</h1>
+    <p class="sub">Real-time urban flood prediction and emergency decision support</p>
+  </div>
+  <div class="ctl">
+    <select id="region" aria-label="Region"></select>
+    <button id="live">Fetch live data</button>
+    <button id="demo" class="red">Cloudburst demo</button>
+    <button id="copy" class="alt">Copy alert message</button>
+  </div>
+</header>
+<div id="banner" role="status" aria-live="polite">Loading live data...</div>
+<div id="status"></div>
+<main>
+  <section class="box">
+    <div class="sw">
+      <input id="pq" type="search" autocomplete="off" placeholder="Search any place in Karnataka: college, office, hospital, mall, street..." aria-label="Search any place">
+      <button id="loc" class="alt" title="Check flood risk at my current location">My location</button>
+      <div id="sug" role="listbox"></div>
+    </div>
+    <div id="map" aria-label="Karnataka flood risk map"></div>
+    <div class="legend">
+      <span style="--c:var(--ok)">Normal</span><span style="--c:var(--watch)">Watch</span>
+      <span style="--c:var(--high)">High</span><span style="--c:var(--crit)">Critical</span>
+    </div>
+    <div id="pr" aria-live="polite"></div>
+    <div id="sur" aria-live="polite"></div>
+  </section>
+  <section>
+    <div class="stats">
+      <div><b id="s1">0</b>people at risk</div>
+      <div><b id="s4">0</b>on alert</div>
+      <div><b id="s2">0</b>pumps</div>
+      <div><b id="s3">0</b>boats</div>
+    </div>
+    <input id="q" type="search" placeholder="Filter the monitored locations below" aria-label="Filter monitored locations">
+    <div id="zones"></div>
+  </section>
+  <section class="box wide" aria-live="polite">
+    <div class="wh"><h2 id="wt">Weather</h2><span class="sub" id="wsub">Click a location, search a place, or click the map to change the weather location.</span></div>
+    <div id="wx"></div>
+    <div id="wchartbox" style="display:none">
+      <strong style="display:block;margin-top:14px">Next 12 hours: humidity and chance of rain</strong>
+      <div id="wchart"></div>
+      <div class="lg"><span style="color:#0e7fa8">&#9632; Humidity %</span><span style="color:#e0732b">&#9632; Chance of rain %</span></div>
+      <strong style="display:block;margin-top:14px">7-day forecast</strong>
+      <div id="days" class="days"></div>
+    </div>
+  </section>
+  <section class="box wide">
+    <strong>Next 12 hours: predicted flood probability, six highest-risk locations</strong>
+    <div id="chart"></div>
+    <div id="cl"></div>
+    <div id="lead" class="sub"></div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// [name, area / district, region, lat, lon, relative elevation above local flood plain (m), drainage capacity (mm/h), population]
+// Elevation, drainage and population are approximate placeholders: replace with GIS / census data for production.
+const RAW=[
+["Bellandur","Bengaluru East","Bengaluru",12.9304,77.6784,2,16,90000],
+["Whitefield","Bengaluru East","Bengaluru",12.9698,77.7500,5,20,150000],
+["Marathahalli","Bengaluru East","Bengaluru",12.9569,77.7011,4,18,110000],
+["KR Puram","Bengaluru East","Bengaluru",13.0050,77.6960,3,17,100000],
+["Silk Board / HSR Layout","Bengaluru South","Bengaluru",12.9177,77.6238,3,17,120000],
+["Koramangala","Bengaluru South","Bengaluru",12.9352,77.6245,4,19,130000],
+["Bommanahalli","Bengaluru South","Bengaluru",12.9081,77.6476,4,18,100000],
+["Jayanagar","Bengaluru South","Bengaluru",12.9250,77.5938,10,26,140000],
+["Electronic City","Bengaluru South","Bengaluru",12.8452,77.6602,9,28,90000],
+["Hebbal","Bengaluru North","Bengaluru",13.0358,77.5970,3,18,100000],
+["Yelahanka","Bengaluru North","Bengaluru",13.1007,77.5963,8,25,120000],
+["Majestic (City Centre)","Bengaluru Central","Bengaluru",12.9767,77.5713,6,22,160000],
+["Rajajinagar","Bengaluru West","Bengaluru",12.9916,77.5520,9,25,120000],
+["Kengeri","Bengaluru West","Bengaluru",12.9170,77.4830,8,24,80000],
+["Mangaluru","Dakshina Kannada","Coastal",12.9141,74.8560,3,20,480000],
+["Udupi","Udupi","Coastal",13.3409,74.7421,3,20,170000],
+["Kundapura","Udupi","Coastal",13.6231,74.6926,2,17,40000],
+["Bhatkal","Uttara Kannada","Coastal",13.9853,74.5569,2,16,40000],
+["Karwar","Uttara Kannada","Coastal",14.8137,74.1290,3,18,80000],
+["Madikeri","Kodagu","Malnad",12.4244,75.7382,22,20,35000],
+["Sakleshpura","Hassan","Malnad",12.9440,75.7860,12,20,30000],
+["Chikkamagaluru","Chikkamagaluru","Malnad",13.3161,75.7720,15,26,120000],
+["Shivamogga","Shivamogga","Malnad",13.9299,75.5681,6,25,320000],
+["Thirthahalli","Shivamogga","Malnad",13.6890,75.2410,8,18,35000],
+["Sirsi","Uttara Kannada","Malnad",14.6196,74.8354,12,22,65000],
+["Mysuru","Mysuru","South Interior",12.2958,76.6394,8,28,920000],
+["Srirangapatna","Mandya","South Interior",12.4140,76.6940,2,16,25000],
+["Mandya","Mandya","South Interior",12.5218,76.8951,4,22,150000],
+["Hassan","Hassan","South Interior",13.0068,76.1004,8,24,160000],
+["Tumakuru","Tumakuru","South Interior",13.3379,77.1173,10,28,310000],
+["Kolar","Kolar","South Interior",13.1357,78.1294,12,26,140000],
+["Chikkaballapur","Chikkaballapur","South Interior",13.4355,77.7315,14,28,70000],
+["Ramanagara","Ramanagara","South Interior",12.7159,77.2813,10,24,100000],
+["Chamarajanagar","Chamarajanagar","South Interior",11.9261,76.9437,8,22,70000],
+["Chitradurga","Chitradurga","South Interior",14.2251,76.3980,12,28,150000],
+["Davanagere","Davanagere","South Interior",14.4644,75.9218,8,26,435000],
+["Hubballi","Dharwad","North Karnataka",15.3647,75.1240,6,25,940000],
+["Dharwad","Dharwad","North Karnataka",15.4589,75.0078,10,28,230000],
+["Belagavi","Belagavi","North Karnataka",15.8497,74.4977,6,24,490000],
+["Gadag","Gadag","North Karnataka",15.4166,75.6290,8,24,170000],
+["Haveri","Haveri","North Karnataka",14.7951,75.4047,8,24,70000],
+["Bagalkot","Bagalkot","North Karnataka",16.1691,75.6615,3,16,110000],
+["Vijayapura","Vijayapura","North Karnataka",16.8302,75.7100,6,22,330000],
+["Kalaburagi","Kalaburagi","North Karnataka",17.3297,76.8343,5,22,540000],
+["Yadgir","Yadgir","North Karnataka",16.7700,77.1380,5,20,70000],
+["Raichur","Raichur","North Karnataka",16.2160,77.3566,3,18,230000],
+["Koppal","Koppal","North Karnataka",15.3459,76.1548,6,22,70000],
+["Hosapete","Vijayanagara","North Karnataka",15.2689,76.3909,4,20,200000],
+["Ballari","Ballari","North Karnataka",15.1394,76.9214,8,26,410000],
+["Bidar","Bidar","North Karnataka",17.9104,77.5199,8,24,220000]
+];
+const LOC=RAW.map((r,i)=>({i,n:r[0],a:r[1],r:r[2],lat:r[3],lon:r[4],el:r[5],dr:r[6],pop:r[7]}));
+const REGIONS=["All Karnataka","Bengaluru","Coastal","Malnad","South Interior","North Karnataka"];
+const LV=[[.75,"CRITICAL","#c0392b","Evacuate low-lying blocks, deploy boats and pumps, close underpasses"],
+  [.5,"HIGH","#e0732b","Send SMS alert, pre-position pumps, divert traffic"],
+  [.3,"WATCH","#c9a227","Clear drains, notify ward officers, check gauges every 15 min"],
+  [0,"NORMAL","#2f8f6b","Routine monitoring"]];
+const PUMPS=150,BOATS=40,THR=.3,RAD=2000;
+const lvl=p=>LV.find(l=>p>=l[0]);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clamp=(v,a,b)=>Math.min(Math.max(v,a),b);
+function risk(rain,f3,river,soil,z){
+  const s=Math.max(rain-z.dr*.8,0)/20+f3/150+river/6*(1-z.el/35)+soil*.6-z.el/40;
+  return 1/(1+Math.exp(-(s-1.4)/.14));
+}
+let S=null,map,markers=[],region="All Karnataka",query="",placeMarker=null,placeData=null,plTok=0,nearLayer=null,radCircle=null;
+let wxFocus={lat:12.9767,lon:77.5713,name:"Majestic (City Centre), Bengaluru"},wxTok=0;
+
+// ---------- DATA ----------
+async function jget(url){
+  const c=new AbortController(),t=setTimeout(()=>c.abort(),25000);
+  try{
+    const r=await fetch(url,{signal:c.signal}),j=await r.json();
+    if(!r.ok||j.error)throw new Error(j.reason||("HTTP "+r.status));
+    return j;
+  }finally{clearTimeout(t)}
+}
+function riverFrom(x){
+  const q=((x&&x.daily&&x.daily.river_discharge)||[]).filter(v=>v!=null);
+  if(q.length<6)return null;
+  const med=[...q].sort((a,b)=>a-b)[Math.floor(q.length/2)]||.001;
+  const ratio=Math.max(...q.slice(-3))/med;
+  return .5+5.5*Math.min(Math.max((ratio-.5)/3.5,0),1);
+}
+async function getLive(){
+  const la=LOC.map(l=>l.lat).join(","),lo=LOC.map(l=>l.lon).join(",");
+  let w,soilOk=true;
+  try{w=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&hourly=precipitation,soil_moisture_3_to_9cm&forecast_hours=15&timezone=auto`)}
+  catch(e){soilOk=false;w=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&hourly=precipitation&forecast_hours=15&timezone=auto`)}
+  if(!Array.isArray(w))w=[w];
+  let rv=LOC.map(()=>null),note="river: live discharge";
+  try{
+    let r=await jget(`https://flood-api.open-meteo.com/v1/flood?latitude=${la}&longitude=${lo}&daily=river_discharge&past_days=30&forecast_days=3`);
+    if(!Array.isArray(r))r=[r];
+    rv=r.map(riverFrom);
+  }catch(e){note="river: estimated (discharge feed unavailable)"}
+  const d=LOC.map((l,i)=>{
+    const h=w[i].hourly;
+    const hp=h.precipitation.map(x=>x||0);
+    const sm=soilOk&&h.soil_moisture_3_to_9cm?h.soil_moisture_3_to_9cm:null;
+    const soil=hp.map((_,k)=>Math.min(Math.max((sm&&sm[k]!=null?sm[k]:.35)/.5,0),1));
+    return {hp,soil,river:rv[i]==null?2:rv[i]};
+  });
+  return {d,note:note+(soilOk?"":", soil: estimated"),label:"Live"};
+}
+function demoData(){
+  const F={"Bengaluru":1,"Coastal":1.1,"Malnad":1.2,"South Interior":.7,"North Karnataka":.6};
+  const d=LOC.map(l=>{
+    const f=F[l.r];
+    return {hp:Array.from({length:15},(_,h)=>5+90*f*Math.exp(-(((h-5)/2.5)**2))),
+      soil:Array(15).fill(.85),river:Math.min(3+2*f,6)};
+  });
+  return {d,note:"simulated cloudburst",label:"Demo"};
+}
+
+// ---------- WEATHER (follows the selected place) ----------
+const WMO=c=>c===0?"Clear sky":c<=2?"Partly cloudy":c===3?"Overcast":c<=48?"Fog":c<=57?"Drizzle":c<=67?"Rain":c<=77?"Snow":c<=82?"Rain showers":c<=86?"Snow showers":c>=95?"Thunderstorm":"Mixed";
+const compass=d=>["N","NE","E","SE","S","SW","W","NW"][Math.round(d/45)%8];
+const num=(v,d,u)=>v==null||isNaN(v)?"n/a":(+v).toFixed(d)+u;
+async function loadWeather(lat,lon,name){
+  wxFocus={lat,lon,name};
+  const tok=++wxTok;
+  $("wt").textContent="Weather: "+name;
+  $("wsub").textContent="Loading...";
+  let j;
+  try{
+    j=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&timezone=auto&forecast_days=7&forecast_hours=13`
+      +`&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,pressure_msl,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,weather_code`
+      +`&hourly=relative_humidity_2m,dew_point_2m,visibility,uv_index,precipitation_probability,soil_moisture_3_to_9cm`
+      +`&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code`);
+  }catch(e){
+    if(tok===wxTok){$("wsub").textContent="";$("wx").innerHTML=`<small class="sub">Live weather unavailable (${esc(e.message||e)}). Check that this browser can reach api.open-meteo.com.</small>`;$("wchartbox").style.display="none"}
+    return;
+  }
+  if(tok!==wxTok)return;
+  const c=j.current,h=j.hourly,d=j.daily;
+  const k=(l,v,s,big)=>`<div class="wc${big?" big":""}">${l}<b>${v}</b>${s||""}</div>`;
+  const hum=c.relative_humidity_2m,sm=h.soil_moisture_3_to_9cm&&h.soil_moisture_3_to_9cm[0];
+  $("wsub").textContent="Updated "+new Date().toLocaleTimeString()+" - Open-Meteo";
+  $("wx").innerHTML=`<div class="wcards">`+
+    k("Conditions",WMO(c.weather_code),"",true)+
+    k("Temperature",num(c.temperature_2m,1,"°C"),"feels like "+num(c.apparent_temperature,1,"°C"),true)+
+    k("Humidity",hum+"%",hum>=85?"very humid":hum>=65?"humid":hum>=40?"comfortable":"dry",true)+
+    k("Rain now",num(c.precipitation,1," mm"),"chance next hour "+num(h.precipitation_probability[1],0,"%"))+
+    k("Wind",num(c.wind_speed_10m,0," km/h"),compass(c.wind_direction_10m)+", gusts "+num(c.wind_gusts_10m,0," km/h"))+
+    k("Dew point",num(h.dew_point_2m[0],1,"°C"))+
+    k("Pressure",num(c.pressure_msl,0," hPa"))+
+    k("Cloud cover",c.cloud_cover+"%")+
+    k("Visibility",h.visibility[0]==null?"n/a":(h.visibility[0]/1000).toFixed(1)+" km")+
+    k("UV index",num(h.uv_index[0],1,""))+
+    k("Soil moisture",sm==null?"n/a":Math.round(clamp(sm/.5,0,1)*100)+"%","saturation")+
+    `</div>`;
+  $("wchartbox").style.display="block";
+  wchart(h.relative_humidity_2m.slice(0,12),h.precipitation_probability.slice(0,12));
+  $("days").innerHTML=d.time.map((t,i)=>`<div class="wc">${new Date(t+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric"})}<b>${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</b>${WMO(d.weather_code[i])}<br>rain ${d.precipitation_sum[i]} mm, chance ${d.precipitation_probability_max[i]}%</div>`).join("");
+}
+function wchart(hum,pop){
+  const W=900,H=220,L=42,B=26,T=10,x=h=>L+h*(W-L-10)/11,y=p=>T+(1-p/100)*(H-T-B),cols=["#0e7fa8","#e0732b"];
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Humidity and chance of rain, next 12 hours">`;
+  [0,25,50,75,100].forEach(p=>s+=`<line x1="${L}" x2="${W-10}" y1="${y(p)}" y2="${y(p)}" stroke="currentColor" opacity=".12"/><text x="4" y="${y(p)+4}">${p}%</text>`);
+  for(let h=0;h<12;h+=2)s+=`<text x="${x(h)-6}" y="${H-8}">+${h}h</text>`;
+  [hum,pop].forEach((v,i)=>s+=`<polyline fill="none" stroke="${cols[i]}" stroke-width="2.5" points="${v.map((p,h)=>x(h)+","+y(p==null?0:p)).join(" ")}"/>`);
+  $("wchart").innerHTML=s+"</svg>";
+}
+
+// ---------- RENDER (monitored locations) ----------
+function render(){
+  const vis=LOC.filter(l=>region==="All Karnataka"||l.r===region);
+  const now=vis.map(l=>{
+    const d=S.d[l.i],f3=d.hp[1]+d.hp[2]+d.hp[3],p=risk(d.hp[0],f3,d.river,d.soil[0],l),lv=lvl(p);
+    return {...l,p,level:lv[1],color:lv[2],action:lv[3],exposed:Math.round(l.pop*p),rain:d.hp[0],f3};
+  });
+  const tot=now.reduce((a,z)=>a+z.exposed,0)||1;
+  now.forEach(z=>{z.pumps=Math.round(z.exposed/tot*PUMPS);z.boats=Math.round(z.exposed/tot*BOATS)});
+  now.sort((a,b)=>b.p-a.p);
+  const worst=now[0],alert=now.filter(z=>z.p>=THR),bad=now.filter(z=>z.p>=.5);
+
+  const b=$("banner");b.style.background=worst.color;
+  b.textContent=bad.length?`${worst.level}: ${bad.slice(0,4).map(z=>z.n).join(", ")}${bad.length>4?` and ${bad.length-4} more`:""} - ${worst.action}`
+    :alert.length?`WATCH: ${alert.slice(0,4).map(z=>z.n).join(", ")} - ${worst.action}`
+    :"All locations normal. Routine monitoring.";
+  $("s1").textContent=now.reduce((a,z)=>a+z.exposed,0).toLocaleString();
+  $("s4").textContent=alert.length;
+  $("s2").textContent=now.reduce((a,z)=>a+z.pumps,0);
+  $("s3").textContent=now.reduce((a,z)=>a+z.boats,0);
+
+  const q=query.trim().toLowerCase();
+  const list=now.filter(z=>!q||(z.n+" "+z.a).toLowerCase().includes(q)).slice(0,20);
+  $("zones").innerHTML=list.map(z=>`<button class="z" data-i="${z.i}" style="--c:${z.color}">
+    <h3><span>${z.n} <em>${z.a}</em></span><span class="tag">${z.level}</span></h3>
+    <div class="bar"><i style="width:${Math.round(z.p*100)}%"></i></div>
+    <small>${Math.round(z.p*100)}% flood probability, ${z.exposed.toLocaleString()} people exposed, ${z.pumps} pumps, ${z.boats} boats</small>
+    <small>Rain now ${z.rain.toFixed(1)} mm/h, next 3 h ${z.f3.toFixed(1)} mm</small>
+    <small>${z.action}</small></button>`).join("")||"<p class='sub'>No matching location.</p>";
+
+  markers.forEach(m=>map.removeLayer(m.m));markers=[];
+  now.forEach(z=>{
+    const m=L.circleMarker([z.lat,z.lon],{radius:6+Math.sqrt(z.pop/1000)/3,color:"#fff",weight:2,fillColor:z.color,fillOpacity:.9})
+      .addTo(map).bindTooltip(`${z.n}, ${z.a}: ${z.level} (${Math.round(z.p*100)}%)`)
+      .bindPopup(`<div class="pop"><b>${z.n}</b><div>${z.a} district, ${z.r}</div>
+        <div><b>${z.level}</b> - ${Math.round(z.p*100)}% flood probability</div>
+        <div>${z.exposed.toLocaleString()} people exposed</div>
+        <div>Rain ${z.rain.toFixed(1)} mm/h, next 3 h ${z.f3.toFixed(1)} mm</div>
+        <div>${z.action}</div></div>`)
+      .on("click",()=>loadWeather(z.lat,z.lon,z.n+", "+z.a));
+    markers.push({i:z.i,m});
+  });
+
+  const top=now.slice(0,6);
+  const series=top.map(z=>{const d=S.d[z.i];return Array.from({length:12},(_,h)=>risk(d.hp[h],d.hp[h+1]+d.hp[h+2]+d.hp[h+3],d.river,d.soil[h],z))});
+  chart(top,series);
+  window._msg=`FLOODSENSE ALERT (Karnataka): ${worst.level} risk in ${worst.n}, ${worst.a} (${Math.round(worst.p*100)}%). ${worst.action}. Locations on alert: ${alert.length}. People exposed: ${$("s1").textContent}.`;
+}
+
+function chart(top,series){
+  const W=900,H=240,L=40,B=26,T=10,cols=["#0e5a73","#e0732b","#c0392b","#2f8f6b","#8e5ea2","#c9a227"];
+  const x=h=>L+h*(W-L-10)/11,y=p=>T+(1-p)*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Flood probability over 12 hours">`;
+  [0,.25,.5,.75,1].forEach(p=>s+=`<line x1="${L}" x2="${W-10}" y1="${y(p)}" y2="${y(p)}" stroke="currentColor" opacity=".12"/><text x="4" y="${y(p)+4}">${p*100}%</text>`);
+  s+=`<line x1="${L}" x2="${W-10}" y1="${y(THR)}" y2="${y(THR)}" stroke="#c0392b" stroke-dasharray="5 4"/><text x="${W-95}" y="${y(THR)-4}">alert threshold</text>`;
+  for(let h=0;h<12;h+=2)s+=`<text x="${x(h)-6}" y="${H-8}">+${h}h</text>`;
+  series.forEach((sr,i)=>s+=`<polyline fill="none" stroke="${cols[i]}" stroke-width="2.5" points="${sr.map((p,h)=>x(h)+","+y(p)).join(" ")}"/>`);
+  $("chart").innerHTML=s+"</svg>";
+  $("cl").innerHTML=top.map((z,i)=>`<span style="color:${cols[i]}">&#9632; ${esc(z.n)}</span>`).join("");
+  const lead=top.map((z,i)=>{const h=series[i].findIndex(p=>p>=THR);return h>=0?`${z.n}: ${h===0?"alert now":"alert in "+h+" h"}`:null}).filter(Boolean);
+  $("lead").textContent=lead.length?"Early warning lead time - "+lead.join(" | "):"No location is predicted to cross the alert threshold in the next 12 hours.";
+}
+
+async function go(){
+  const st=$("status");
+  st.textContent="Fetching live data for "+LOC.length+" locations...";
+  try{
+    S=await getLive();
+    const d=S.d[5];
+    st.textContent=`Live data at ${new Date().toLocaleTimeString()} for ${LOC.length} Karnataka locations (Koramangala now: rain ${d.hp[0].toFixed(1)} mm/h, soil ${Math.round(d.soil[0]*100)}%). ${S.note}. Auto-refreshes every 5 minutes.`;
+  }catch(e){
+    S=demoData();
+    st.textContent=`Live data unavailable (${e.message||e}). Check that this browser can reach api.open-meteo.com. Showing the cloudburst demo instead.`;
+  }
+  render();
+  loadWeather(wxFocus.lat,wxFocus.lon,wxFocus.name);
+  if(placeData&&S.label==="Live")checkPlace(placeData,true);
+}
+function fit(){
+  const vis=LOC.filter(l=>region==="All Karnataka"||l.r===region);
+  map.fitBounds(L.latLngBounds(vis.map(l=>[l.lat,l.lon])),{padding:[30,30],maxZoom:12});
+}
+
+// ---------- PLACE SEARCH (any college, office, hospital, street...) ----------
+const KA_BBOX="74.0,11.5,78.6,18.5";
+async function photon(q){
+  const j=await jget(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8&lat=14.8&lon=76.2&bbox=${KA_BBOX}`);
+  return j.features.map(f=>{
+    const p=f.properties,c=f.geometry.coordinates;
+    const sub=[p.street&&(p.housenumber?p.housenumber+" ":"")+p.street,p.suburb||p.locality,p.district||p.county,p.city,p.state].filter((v,i,a)=>v&&a.indexOf(v)===i).join(", ");
+    return {name:p.name||p.street||p.city||"Place",sub,kind:p.osm_value||p.type||"",lat:c[1],lon:c[0],state:p.state};
+  }).filter(r=>!r.state||/karnataka/i.test(r.state));
+}
+async function nominatim(q){
+  const j=await jget(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=8&countrycodes=in&viewbox=74.0,18.5,78.6,11.5&bounded=1&q=${encodeURIComponent(q)}`);
+  return j.map(r=>({name:r.name||r.display_name.split(",")[0],sub:r.display_name,kind:r.type||"",lat:+r.lat,lon:+r.lon}));
+}
+let sTok=0,sTimer=null,sResults=[];
+async function doSearch(q){
+  const tok=++sTok,box=$("sug");
+  box.style.display="block";box.innerHTML="<p>Searching...</p>";
+  let res=[];
+  try{res=await photon(q)}catch(e){try{res=await nominatim(q)}catch(e2){
+    if(tok===sTok)box.innerHTML="<p>Search is unavailable. Check this browser's internet access.</p>";return}}
+  if(tok!==sTok)return;
+  sResults=res;
+  box.innerHTML=res.length?res.map((r,i)=>`<button data-k="${i}" role="option"><b>${esc(r.name)}</b><small>${esc(r.kind?r.kind.replace(/_/g," ")+" - ":"")}${esc(r.sub)}</small></button>`).join("")
+    :"<p>No place found in Karnataka. Try a more specific name or add the area.</p>";
+}
+$("pq").addEventListener("input",e=>{
+  clearTimeout(sTimer);const q=e.target.value.trim();
+  if(q.length<3){sTok++;$("sug").style.display="none";return}
+  sTimer=setTimeout(()=>doSearch(q),350);
+});
+$("pq").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&sResults.length&&$("sug").style.display==="block"){e.preventDefault();pick(0)}
+  if(e.key==="Escape")$("sug").style.display="none";
+});
+$("sug").addEventListener("click",e=>{const b=e.target.closest("button");if(b)pick(+b.dataset.k)});
+document.addEventListener("click",e=>{if(!e.target.closest(".sw"))$("sug").style.display="none"});
+function pick(k){
+  const r=sResults[k];if(!r)return;
+  $("sug").style.display="none";$("pq").value=r.name;
+  checkPlace(r,false);
+}
+$("loc").onclick=()=>{
+  if(!navigator.geolocation||!window.isSecureContext){
+    $("pr").style.display="block";$("pr").style.setProperty("--c","var(--watch)");
+    $("pr").innerHTML="<b>My location needs a secure (HTTPS) page.</b><small>Browsers block location access on plain http addresses. Search for your place by name, or host this page on HTTPS (for example Netlify or GitHub Pages).</small>";return}
+  navigator.geolocation.getCurrentPosition(
+    p=>checkPlace({name:"My location",sub:"Current position",kind:"",lat:p.coords.latitude,lon:p.coords.longitude,rev:true},false),
+    e=>{$("pr").style.display="block";$("pr").innerHTML="<b>Could not get your location.</b><small>"+esc(e.message)+"</small>"});
+};
+
+const hav=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180,dl=t(c-a),dn=t(d-b);
+  const h=Math.sin(dl/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+const fmtD=km=>km<1?Math.round(km*1000/10)*10+" m":km.toFixed(1)+" km";
+async function weatherAt(lat,lon){
+  try{const w=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation,soil_moisture_3_to_9cm&forecast_hours=15&timezone=auto`);
+    return {hp:w.hourly.precipitation.map(x=>x||0),sm:w.hourly.soil_moisture_3_to_9cm}}
+  catch(e){const w=await jget(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=precipitation&forecast_hours=15&timezone=auto`);
+    return {hp:w.hourly.precipitation.map(x=>x||0),sm:null}}
+}
+async function revGeo(lat,lon){
+  const j=await jget(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lon}`);
+  const p=j.features[0].properties;
+  return {name:p.name||p.street||p.suburb||p.city,sub:[p.street,p.suburb||p.locality,p.district||p.county,p.city,p.state].filter((v,i,a)=>v&&a.indexOf(v)===i).join(", ")};
+}
+
+// ---------- SURROUNDING AREA (OpenStreetMap data via Overpass, within 2 km) ----------
+const OVERPASS=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
+async function overpass(lat,lon){
+  const a=`(around:${RAD},${lat},${lon})`;
+  const q=`[out:json][timeout:25];(
+nwr${a}[amenity~"^(hospital|clinic|police|fire_station|pharmacy|school|college|university|community_centre|townhall)$"];
+nwr${a}[natural~"^(water|wetland)$"];
+nwr${a}[waterway~"^(river|stream|canal|drain)$"];
+);out center 300;`;
+  let err;
+  for(const u of OVERPASS){
+    const c=new AbortController(),t=setTimeout(()=>c.abort(),30000);
+    try{
+      const r=await fetch(u,{method:"POST",body:"data="+encodeURIComponent(q),headers:{"Content-Type":"application/x-www-form-urlencoded"},signal:c.signal});
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      return (await r.json()).elements;
+    }catch(e){err=e}finally{clearTimeout(t)}
+  }
+  throw err;
+}
+const CATS={
+  hospital:{label:"Hospitals and clinics",c:"#c0392b"},
+  police:{label:"Police stations",c:"#2563eb"},
+  fire:{label:"Fire stations",c:"#e0732b"},
+  pharmacy:{label:"Pharmacies",c:"#8e5ea2"},
+  shelter:{label:"Possible relief shelters (schools, colleges, halls)",c:"#2f8f6b"},
+  water:{label:"Water bodies and drains",c:"#0ea5e9"}};
+function catOf(t){
+  const a=t.amenity;
+  if(a==="hospital"||a==="clinic")return "hospital";
+  if(a==="police")return "police";
+  if(a==="fire_station")return "fire";
+  if(a==="pharmacy")return "pharmacy";
+  if(a)return "shelter";
+  return "water";
+}
+function waterKind(t){
+  if(t.waterway)return t.waterway==="drain"?"drain":t.waterway;
+  return t.natural==="wetland"?"wetland":(t.water&&t.water!=="yes"?t.water:"water body");
+}
+async function loadSur(r,tok){
+  const box=$("sur");
+  box.style.display="block";
+  box.innerHTML=`<h4>Surrounding area (within ${RAD/1000} km)</h4><small>Loading nearby hospitals, shelters, water bodies...</small>`;
+  if(nearLayer){map.removeLayer(nearLayer);nearLayer=null}
+  if(radCircle){map.removeLayer(radCircle);radCircle=null}
+  let els;
+  try{els=await overpass(r.lat,r.lon)}catch(e){
+    if(tok===plTok)box.innerHTML=`<h4>Surrounding area</h4><small>Nearby-place data is unavailable right now (${esc(e.message||e)}). Try again in a moment.</small>`;return}
+  if(tok!==plTok)return;
+  const items=[],seen={};
+  els.forEach(e=>{
+    const t=e.tags||{},lat=e.lat!=null?e.lat:e.center&&e.center.lat,lon=e.lon!=null?e.lon:e.center&&e.center.lon;
+    if(lat==null)return;
+    const cat=catOf(t),name=t.name||t["name:en"]||(cat==="water"?waterKind(t)[0].toUpperCase()+waterKind(t).slice(1):CATS[cat].label.split(" (")[0].replace(/s$/,""));
+    const key=cat+"|"+name+"|"+lat.toFixed(3)+"|"+lon.toFixed(3);
+    if(seen[key])return;seen[key]=1;
+    items.push({cat,name,kind:cat==="water"?waterKind(t):(t.amenity||"").replace(/_/g," "),lat,lon,d:hav(r.lat,r.lon,lat,lon),named:!!(t.name||t["name:en"])});
+  });
+  items.sort((a,b)=>a.d-b.d);
+  const by={};Object.keys(CATS).forEach(k=>by[k]=items.filter(i=>i.cat===k));
+  nearLayer=L.layerGroup().addTo(map);
+  radCircle=L.circle([r.lat,r.lon],{radius:RAD,color:"#0e5a73",weight:1.5,dashArray:"6 5",fillOpacity:.04,interactive:false}).addTo(map);
+  items.forEach(i=>L.circleMarker([i.lat,i.lon],{radius:i.cat==="water"?4:6,color:"#fff",weight:1.5,fillColor:CATS[i.cat].c,fillOpacity:.95})
+    .addTo(nearLayer).bindTooltip(`${i.name} (${i.kind}) - ${fmtD(i.d)}`));
+  const row=k=>{
+    const L2=by[k],c=CATS[k],named=L2.filter(i=>i.named);
+    const top=(named.length?named:L2).slice(0,3);
+    return `<div class="row"><span class="dot" style="--c:${c.c}"></span><div><b>${c.label}: ${L2.length}</b>${
+      top.length?top.map(i=>`<small>${esc(i.name)}${i.kind&&i.cat!=="water"?" ("+esc(i.kind)+")":i.cat==="water"?" ("+esc(i.kind)+")":""} - ${fmtD(i.d)}</small>`).join(""):"<small>None mapped within "+RAD/1000+" km</small>"}</div></div>`;
+  };
+  const wNear=by.water[0],hNear=by.hospital[0];
+  let note=wNear&&wNear.d<.4?`A ${esc(wNear.kind)} is within ${fmtD(wNear.d)}: this spot is more exposed to overflow and waterlogging than the score alone suggests.`
+    :wNear?`Nearest ${esc(wNear.kind)} is about ${fmtD(wNear.d)} away.`:"No mapped water body or drain nearby, so flooding here would mostly be local waterlogging.";
+  note+=hNear?` Nearest hospital or clinic: ${esc(hNear.name)}, ${fmtD(hNear.d)}.`:" No hospital mapped nearby: plan for a longer ambulance route.";
+  if(els.length>=300)note+=" (Very dense area: the 300 closest-mapped features are shown.)";
+  box.innerHTML=`<h4>Surrounding area (within ${RAD/1000} km of ${esc(r.name)})</h4>`+
+    ["hospital","police","fire","pharmacy","shelter","water"].map(row).join("")+
+    `<div class="note">${note}</div>
+    <small style="margin-top:6px">Emergency numbers: 112 (all emergencies), 108 (ambulance), 101 (fire), 100 (police). Data: OpenStreetMap contributors; coverage varies, and water-body distances are measured to the feature's centre.</small>`;
+}
+
+async function checkPlace(r,silent){
+  placeData=r;
+  const tok=++plTok;
+  const pr=$("pr");
+  if(!silent){
+    pr.style.display="block";pr.style.setProperty("--c","var(--sea)");
+    pr.innerHTML=`<h3>${esc(r.name)}</h3><small>Checking live rain, soil, river and terrain...</small>`;
+    map.flyTo([r.lat,r.lon],14,{duration:.8});
+    loadSur(r,tok);
+    loadWeather(r.lat,r.lon,r.name);
+  }
+  const ring=[[0,0]];[-1,0,1].forEach(a=>[-1,0,1].forEach(b=>{if(a||b)ring.push([a*.02,b*.02])}));
+  const la=ring.map(o=>(r.lat+o[0]).toFixed(4)).join(","),lo=ring.map(o=>(r.lon+o[1]).toFixed(4)).join(",");
+  const needRev=!silent&&(r.name==="Selected point"||r.rev);
+  const [w,e,rv,gv]=await Promise.allSettled([weatherAt(r.lat,r.lon),
+    jget(`https://api.open-meteo.com/v1/elevation?latitude=${la}&longitude=${lo}`),
+    jget(`https://flood-api.open-meteo.com/v1/flood?latitude=${r.lat}&longitude=${r.lon}&daily=river_discharge&past_days=30&forecast_days=3`),
+    needRev?revGeo(r.lat,r.lon):Promise.reject("skip")]);
+  if(tok!==plTok)return;
+  if(gv.status==="fulfilled"&&gv.value){
+    r.sub=gv.value.sub||r.sub;
+    if(r.name==="Selected point"&&gv.value.name)r.name=gv.value.name;
+    if(!silent)loadWeather(r.lat,r.lon,r.name);
+  }
+  if(w.status!=="fulfilled"){pr.style.setProperty("--c","var(--watch)");
+    pr.innerHTML=`<h3>${esc(r.name)}</h3><small>Live weather unavailable (${esc(w.reason&&w.reason.message||w.reason)}). Try again in a moment.</small>`;return}
+  const {hp,sm}=w.value;
+  const soil=hp.map((_,k)=>Math.min(Math.max((sm&&sm[k]!=null?sm[k]:.35)/.5,0),1));
+  let el=8,terrain="terrain: default (elevation feed unavailable)",abs=null;
+  if(e.status==="fulfilled"&&e.value.elevation&&e.value.elevation.length>8){
+    const E=e.value.elevation;abs=E[0];el=Math.min(Math.max(E[0]-Math.min(...E),0),30);
+    terrain=`${Math.round(abs)} m above sea level, ${el.toFixed(0)} m above the lowest ground within 2 km`;
+  }
+  const river=rv.status==="fulfilled"&&riverFrom(rv.value)!=null?riverFrom(rv.value):2;
+  let near=LOC[0],nd=1e9;LOC.forEach(l=>{const d=hav(r.lat,r.lon,l.lat,l.lon);if(d<nd){nd=d;near=l}});
+  const dr=nd<25?near.dr:22;
+  const z={el,dr};
+  const f3=hp[1]+hp[2]+hp[3],p=risk(hp[0],f3,river,soil[0],z),lv=lvl(p);
+  const series=Array.from({length:12},(_,h)=>risk(hp[h],hp[h+1]+hp[h+2]+hp[h+3],river,soil[h],z));
+  const lead=series.findIndex(v=>v>=THR);
+  const W2=300,H2=56,x=h=>4+h*(W2-8)/11,y=v=>4+(1-v)*(H2-8);
+  const spark=`<svg viewBox="0 0 ${W2} ${H2}" width="100%" height="56"><line x1="4" x2="${W2-4}" y1="${y(THR)}" y2="${y(THR)}" stroke="#c0392b" stroke-dasharray="4 3"/><polyline fill="none" stroke="${lv[2]}" stroke-width="2.5" points="${series.map((v,h)=>x(h)+","+y(v)).join(" ")}"/></svg>`;
+  pr.style.setProperty("--c",lv[2]);
+  pr.innerHTML=`<h3><span>${esc(r.name)}</span><span class="tag" style="--c:${lv[2]}">${lv[1]}</span></h3>
+    <small>${esc(r.sub)}</small>
+    <div class="bar" style="--c:${lv[2]}"><i style="width:${Math.round(p*100)}%"></i></div>
+    <b>${Math.round(p*100)}% flood probability</b>
+    <div class="grid"><span>Rain now: ${hp[0].toFixed(1)} mm/h</span><span>Next 3 h: ${f3.toFixed(1)} mm</span>
+      <span>Soil saturation: ${Math.round(soil[0]*100)}%</span><span>River stress: ${river.toFixed(1)} m</span>
+      <span>Drainage assumed: ${dr} mm/h</span><span>Nearest monitored zone: ${esc(near.n)} (${nd.toFixed(0)} km)</span></div>
+    <small>${esc(terrain)}</small>
+    ${spark}
+    <small>${lead>=0?(lead===0?"Alert threshold already crossed.":"Alert threshold crossed in about "+lead+" h."):"No alert predicted in the next 12 hours."} Recommended: ${lv[3]}.</small>`;
+  window._msg=`FLOODSENSE ALERT: ${lv[1]} flood risk at ${r.name} (${Math.round(p*100)}%). ${lv[3]}.`;
+  if(placeMarker)map.removeLayer(placeMarker);
+  placeMarker=L.marker([r.lat,r.lon],{icon:L.divIcon({className:"",html:`<div class="pin" style="--c:${lv[2]}"></div>`,iconSize:[26,26],iconAnchor:[13,26]})})
+    .addTo(map).bindTooltip(`${r.name}: ${lv[1]} (${Math.round(p*100)}%)`);
+}
+
+// ---------- MAP (Esri tiles: no API key needed) ----------
+map=L.map("map",{zoomControl:true});
+const esri=(n,mx)=>L.tileLayer(`https://server.arcgisonline.com/ArcGIS/rest/services/${n}/MapServer/tile/{z}/{y}/{x}`,{maxZoom:mx||19,attribution:"Tiles &copy; Esri | Weather: Open-Meteo | Search and nearby places: Photon / OpenStreetMap"});
+const streets=esri("World_Street_Map").addTo(map);
+const sat=L.layerGroup([esri("World_Imagery"),esri("Reference/World_Boundaries_and_Places")]);
+const topo=esri("World_Topo_Map");
+L.control.layers({"Streets":streets,"Satellite + names":sat,"Terrain":topo},null,{position:"topright"}).addTo(map);
+map.setView([14.8,76.2],7);
+map.on("click",e=>checkPlace({name:"Selected point",sub:`${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`,kind:"",lat:e.latlng.lat,lon:e.latlng.lng},false));
+
+// ---------- UI ----------
+REGIONS.forEach(r=>$("region").add(new Option(r,r)));
+$("region").onchange=e=>{region=e.target.value;fit();render()};
+$("q").oninput=e=>{query=e.target.value;render()};
+$("live").onclick=go;
+$("demo").onclick=()=>{S=demoData();$("status").textContent="Simulated cloudburst across Karnataka (rain peaks about 5 hours from now). Searched places and the weather panel still use live data.";render()};
+$("copy").onclick=e=>{navigator.clipboard.writeText(window._msg||"");e.target.textContent="Copied";setTimeout(()=>e.target.textContent="Copy alert message",1500)};
+$("zones").onclick=e=>{
+  const btn=e.target.closest(".z");if(!btn)return;
+  const m=markers.find(k=>k.i==btn.dataset.i);
+  if(m){map.flyTo(m.m.getLatLng(),12,{duration:.8});m.m.openPopup();const l=LOC[btn.dataset.i];loadWeather(l.lat,l.lon,l.n+", "+l.a)}
+};
+fit();go();
+setInterval(()=>{if(S&&S.label==="Live")go()},300000);
+async function checkBackend() {
+    try {
+        const response = await fetch("/api/health");
+        const data = await response.json();
+        console.log("Backend connected:", data);
+    } catch (error) {
+        console.error("Backend connection failed:", error);
+    }
+}
+
+checkBackend();
+</script>
+</body>
+</html>
